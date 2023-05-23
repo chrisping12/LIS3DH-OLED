@@ -1,80 +1,102 @@
+
+
+
+// display.display() is NOT necessary after every single drawing command,
+// unless thats what you want. rather, you can batch up a bunch of
+// drawing operations and then update the screen all at once by calling
+// display.display(). 
+
 #include <Arduino.h>
-#include <Wire.h>
-#include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
+#include <Adafruit_GFX.h>
+#include <WIRE.h>
+#include <adafruit_LIS3DH.h>
+#include <adafruit_sensor.h>
 
-Adafruit_SH1107 display = Adafruit_SH1107(64, 128, &Wire);
+#define SCREEN_WIDTH 64 //
+#define SCREEN_HEIGHT 128 //
 
-// OLED FeatherWing buttons map to different pins depending on board:
-#if defined(ESP8266)
-  #define BUTTON_A  0
-  #define BUTTON_B 16
-  #define BUTTON_C  2
-#elif defined(ESP32) && !defined(ARDUINO_ADAFRUIT_FEATHER_ESP32S2)
-  #define BUTTON_A 15
-  #define BUTTON_B 32
-  #define BUTTON_C 14
-#elif defined(ARDUINO_STM32_FEATHER)
-  #define BUTTON_A PA15
-  #define BUTTON_B PC7
-  #define BUTTON_C PC5
-#elif defined(TEENSYDUINO)
-  #define BUTTON_A  4
-  #define BUTTON_B  3
-  #define BUTTON_C  8
-#elif defined(ARDUINO_NRF52832_FEATHER)
-  #define BUTTON_A 31
-  #define BUTTON_B 30
-  #define BUTTON_C 27
-#else // 32u4, M0, M4, nrf52840, esp32-s2 and 328p
-  #define BUTTON_A  9
-  #define BUTTON_B  6
-  #define BUTTON_C  5
-#endif
+Adafruit_SH1107 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire);
+
+Adafruit_LIS3DH lis = Adafruit_LIS3DH();
 
 void setup() {
-  Serial.begin(115200);
 
-  Serial.println("128x64 OLED FeatherWing test");
-  delay(250); // wait for the OLED to power up
-  display.begin(0x3C, true); // Address 0x3C default
+    Serial.begin(115200);
+    delay(250); // wait for the OLED to power up
+    display.begin(0x3C, true);  // Address 0x3C for 128x64
 
-  display.println("OLED begun");
+    Serial.println("OLED begun");
 
-  // Show image buffer on the display hardware.
-  // Since the buffer is intialized with an Adafruit splashscreen
-  // internally, this will display the splashscreen.
-  display.display();
-  delay(1000);
+    // Show image buffer on the display hardware.
+    // Since the buffer is intialized with an Adafruit splashscreen
+    // internally, this will display the splashscreen.
+    display.display();
+    delay(1000);
 
-  // Clear the buffer.
-  display.clearDisplay();
-  display.display();
+    // Clear the buffer.
+    display.clearDisplay();
+    display.display();
 
-  display.setRotation(1);
-  display.println("Button test");
-  display.display();
+    display.setRotation(1);
+    // define text info for display.
+    // Begin LIS3DH start up sequence.
 
-  pinMode(BUTTON_A, INPUT_PULLUP);
-  pinMode(BUTTON_B, INPUT_PULLUP);
-  pinMode(BUTTON_C, INPUT_PULLUP);
+  Serial.println("LIS3DH test!");
+  if (! lis.begin(0x18)) 
+  {   
+    Serial.println("Couldnt start LIS3DH");
+    while (1) yield();
+  }
+  Serial.println("LIS3DH found!");
 
-  // text display tests
-  display.setTextSize(1);
-  display.setTextColor(SH110X_WHITE);
-  display.setCursor(0,0);
-  display.println("Grayson is da Coolest");
-  display.println("Baby Boy EVER!");
-  display.println("JUST ASK HIS MOM");
-  display.println("She knows, she knows");
-  display.display(); // actually display all of the above
-}
+  {
+  Serial.print("Range = "); Serial.print(2 << lis.getRange());  // lis.setRange(LIS3DH_RANGE_4_G);   // 2, 4, 8 or 16 G!
+  Serial.println("G");
+  Serial.print("Data rate set to: ");
+  switch (lis.getDataRate()) {  // lis.setDataRate(LIS3DH_DATARATE_50_HZ);
+    case LIS3DH_DATARATE_1_HZ: Serial.println("1 Hz"); break;
+    case LIS3DH_DATARATE_10_HZ: Serial.println("10 Hz"); break;
+    case LIS3DH_DATARATE_25_HZ: Serial.println("25 Hz"); break;
+    case LIS3DH_DATARATE_50_HZ: Serial.println("50 Hz"); break;
+    case LIS3DH_DATARATE_100_HZ: Serial.println("100 Hz"); break;
+    case LIS3DH_DATARATE_200_HZ: Serial.println("200 Hz"); break;
+    case LIS3DH_DATARATE_400_HZ: Serial.println("400 Hz"); break;
 
-void loop() {
-  if(!digitalRead(BUTTON_A)) display.print("A");
-  if(!digitalRead(BUTTON_B)) display.print("B");
-  if(!digitalRead(BUTTON_C)) display.print("C");
+    case LIS3DH_DATARATE_POWERDOWN: Serial.println("Powered Down"); break;
+    case LIS3DH_DATARATE_LOWPOWER_5KHZ: Serial.println("5 Khz Low Power"); break;
+    case LIS3DH_DATARATE_LOWPOWER_1K6HZ: Serial.println("16 Khz Low Power"); break;
+    display.display();
+    delay(3500);
+    }
+  }
+    display.setTextSize(2.0);
+    display.setTextColor(SH110X_WHITE);
+    display.setCursor(0,0);
+    display.println("Accelerometer Demo");
+    display.display();
+
   delay(500);
-  yield();
-  display.display();
 }
+
+
+void loop() {  
+    
+   display.setTextSize(2);
+    display.setCursor(0,9);
+    display.println("Accel Demo");
+
+    display.setTextSize(1.0); 
+    display.setCursor(0,34);
+    sensors_event_t event; 
+    lis.getEvent(&event);
+  
+    /* Display the results (acceleration is measured in m/s^2) */
+    display.print(" \tX: "); display.println(event.acceleration.x);
+    display.print(" \tY: "); display.println(event.acceleration.y);
+    display.print(" \tZ: "); display.println(event.acceleration.z);
+    display.println(" m/s^2 ");
+    display.display();  // actually display all of the above
+  delay(1000);
+}
+    
