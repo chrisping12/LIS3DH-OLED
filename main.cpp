@@ -1,6 +1,5 @@
 
 
-
 // display.display() is NOT necessary after every single drawing command,
 // unless thats what you want. rather, you can batch up a bunch of
 // drawing operations and then update the screen all at once by calling
@@ -23,23 +22,22 @@ Adafruit_LIS3DH lis = Adafruit_LIS3DH();
 void setup() {
 
     Serial.begin(115200);
-    delay(250); // wait for the OLED to power up
+    delay(500); // wait for the OLED to power up
     display.begin(0x3C, true);  // Address 0x3C for 128x64
-
+    display.setRotation(1);
     Serial.println("OLED begun");
-
-    // Show image buffer on the display hardware.
-    // Since the buffer is intialized with an Adafruit splashscreen
-    // internally, this will display the splashscreen.
     display.display();
+    
     delay(1000);
 
-    // Clear the buffer.
+        // Clear the buffer.
     display.clearDisplay();
+    display.setCursor(0,0);
+    display.setTextColor(SH110X_WHITE);
+    display.println("OLED begun");
     display.display();
+    
 
-    display.setRotation(1);
-    // define text info for display.
     // Begin LIS3DH start up sequence.
 
   Serial.println("LIS3DH test!");
@@ -48,8 +46,11 @@ void setup() {
     Serial.println("Couldnt start LIS3DH");
     while (1) yield();
   }
+  display.setCursor(0,9);
+  display.setTextColor(SH110X_WHITE);
   Serial.println("LIS3DH found!");
-
+  display.println("LIS3DH found!");
+  display.display();
   {
   Serial.print("Range = "); Serial.print(2 << lis.getRange());  // lis.setRange(LIS3DH_RANGE_4_G);   // 2, 4, 8 or 16 G!
   Serial.println("G");
@@ -66,37 +67,49 @@ void setup() {
     case LIS3DH_DATARATE_POWERDOWN: Serial.println("Powered Down"); break;
     case LIS3DH_DATARATE_LOWPOWER_5KHZ: Serial.println("5 Khz Low Power"); break;
     case LIS3DH_DATARATE_LOWPOWER_1K6HZ: Serial.println("16 Khz Low Power"); break;
-    display.display();
-    delay(3500);
-    }
+        }
   }
     display.setTextSize(2.0);
     display.setTextColor(SH110X_WHITE);
-    display.setCursor(0,0);
-    display.println("Accelerometer Demo");
+    display.setCursor(0,20);
+    display.println("Accel.Demo");
     display.display();
 
-  delay(500);
+  delay(2000);
 }
 
 
-void loop() {  
-    
-   display.setTextSize(2);
-    display.setCursor(0,9);
-    display.println("Accel Demo");
 
-    display.setTextSize(1.0); 
-    display.setCursor(0,34);
-    sensors_event_t event; 
+
+void loop() {  
+
+  display.fillScreen(0);
+  display.display();
+
+  int chx;
+  int chy;
+  int chz;
+
+  sensors_event_t event; 
     lis.getEvent(&event);
-  
-    /* Display the results (acceleration is measured in m/s^2) */
-    display.print(" \tX: "); display.println(event.acceleration.x);
-    display.print(" \tY: "); display.println(event.acceleration.y);
-    display.print(" \tZ: "); display.println(event.acceleration.z);
-    display.println(" m/s^2 ");
-    display.display();  // actually display all of the above
-  delay(1000);
+
+  chx = event.acceleration.x;
+  chy = event.acceleration.y;
+  chz = event.acceleration.z;
+
+display.setCursor(14,2);
+display.fillScreen(0);
+display.setTextColor(1);
+display.setTextSize(1);
+display.println("Accelerometer Data");
+display.setCursor(0,20);
+display.print("\t X-Axis = "); display.print(chx); display.println(" m/s");
+display.setCursor(0,37);
+display.print("\t Y-Axis = "); display.print(chy); display.println(" m/s");
+display.setCursor(0,54);
+display.print("\t Z-Axis = "); display.print(chz); display.println(" m/s");
+
+
+display.display();
 }
     
